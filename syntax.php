@@ -26,11 +26,25 @@ class syntax_plugin_meta extends DokuWiki_Syntax_Plugin {
 
         $data = array();
         $pairs = explode('&', $match);
+        // Handling literal '&' by Viktor Bodrogi <viktor@axonnet.hu>
+        $lit = false;
+        $k = ''; $sk = ''; $v = '';
         foreach ($pairs as $pair) {
-            list($key, $value) = explode('=', $pair, 2);
-            list($key, $subkey) = explode(' ', $key, 2);
-            if (trim($subkey)) $data[trim($key)][trim($subkey)] = trim($value);
-            else $data[trim($key)] = trim($value);
+            // handle '&&' as one literal '&'
+            if ($lit) $lit = $false;
+            if (trim($pair) == '') { $lit = true; continue; }
+            // if pair contains no '=' then append to previous value with '&'
+            if (!strpos($pair, '=')) {
+                if ($k != '' && $v != '') {
+                    $v .= '&'.$pair;
+                }
+            } else {
+                list($key, $value) = explode('=', $pair, 2);
+                list($key, $subkey) = explode(' ', $key, 2);
+                $k = trim($key); $sk = trim($subkey); $v = trim($value);
+            }
+            if ($sk) $data[$k][$sk] = $v;
+            else $data[$k] = $v;
         }
         $data = array_change_key_case($data, CASE_LOWER);
 
